@@ -1,6 +1,5 @@
 """
 aureus.aureus_utils.consolidated_logger.handler
-
 Contains the core code for ConsolidatedHandler
 """
 
@@ -15,7 +14,10 @@ import datetime
 class ConsolidatedHandler(logging.Handler):
     """
     A logging handler which is compatible with the Python stdlib logging library.
-
+    
+    This logger expects the base log directory to have two sub-directories, '/archived/' and '/unarchived/'.
+    Then, the archive_necessary() function can be called daily to allow all log files older than the archive
+    threshold to be archived as gzip files.
     """
 
     def __init__(
@@ -25,13 +27,10 @@ class ConsolidatedHandler(logging.Handler):
     ) -> None:
         """
         __init__() magic method for ConsolidatedHandler.
-
         :param base_log_directory: The base log directory (contains archived and unarchived directories)
         :type base_log_directory: str
-
         :param archive_threshold_days: The number of days before logs are archived
         :type archive_threshold_days: int
-
         :return None
         :rtype NoneType
         """
@@ -46,7 +45,6 @@ class ConsolidatedHandler(logging.Handler):
     def archive_necessary(self) -> None:
         """
         Archives the necessary logs
-
         :return:
         """
         archive_threshold = (
@@ -62,7 +60,7 @@ class ConsolidatedHandler(logging.Handler):
             )
             if log_datetime <= archive_threshold:
                 # archive the log
-                new_filename = f"{log_datetime_formatted}.AU_LOG"
+                new_filename = f"{log_datetime_formatted}.CLOG"
                 old_log_filepath = os.path.join(self.base_unarchived_log_directory, new_filename)
                 new_log_filepath = os.path.join(self.base_archived_log_directory, new_filename)
                 new_log_filepath += ".gz"
@@ -82,16 +80,14 @@ class ConsolidatedHandler(logging.Handler):
     ) -> str:
         """
         Gets log filepath with the given log timestamp
-
         :param log_timestamp: The log timestamp
         :type log_timestamp: float
-
         :return: Returns a full filepath from the unarchived folder
         :rtype: str
         """
         datetime_formatted = datetime.datetime.fromtimestamp(
             log_timestamp).strftime("%Y-%m-%d")
-        filename = f"{datetime_formatted}.AU_LOG"
+        filename = f"{datetime_formatted}.CLOG"
         return f"{self.base_unarchived_log_directory}/{filename}"
 
     def emit(
@@ -107,4 +103,4 @@ class ConsolidatedHandler(logging.Handler):
         else:
             with open(self.get_log_filepath(time.time()), "a") as file:
                 file.write(text_to_write)
-        self.archive_necessary()
+ 
